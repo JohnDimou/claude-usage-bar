@@ -14,9 +14,7 @@
 A beautiful macOS menu bar app that displays your **Claude Code** usage statistics in real-time. Monitor your session and weekly limits at a glance with a stunning glassmorphic UI.
 
 <p align="center">
-  <video src="https://raw.githubusercontent.com/JohnDimou/ClaudeCodeUsageBar/main/demo.mp4" width="400" controls>
-    Your browser does not support the video tag.
-  </video>
+  <img src="demo.gif" alt="Claude Code Usage Bar Demo" width="600">
 </p>
 
 ## Features
