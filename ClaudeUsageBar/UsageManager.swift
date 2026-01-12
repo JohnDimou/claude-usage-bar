@@ -49,6 +49,13 @@ struct UsageJSON: Codable {
     let error: String?
 }
 
+// MARK: - Settings Keys
+
+enum SettingsKey {
+    static let refreshInterval = "refreshInterval"
+    static let refreshOnOpen = "refreshOnOpen"
+}
+
 // MARK: - Usage Manager
 
 /// Singleton manager for fetching Claude Code usage statistics
@@ -70,6 +77,21 @@ class UsageManager: ObservableObject {
     /// Error message from the last fetch attempt (nil if successful)
     @Published var errorMessage: String?
 
+    /// Refresh interval in seconds
+    @Published var refreshInterval: Double {
+        didSet {
+            UserDefaults.standard.set(refreshInterval, forKey: SettingsKey.refreshInterval)
+            NotificationCenter.default.post(name: .refreshIntervalChanged, object: nil)
+        }
+    }
+
+    /// Whether to refresh when UI opens
+    @Published var refreshOnOpen: Bool {
+        didSet {
+            UserDefaults.standard.set(refreshOnOpen, forKey: SettingsKey.refreshOnOpen)
+        }
+    }
+
     // MARK: Configuration
 
     /// Name of the Python script bundled in the app
@@ -84,7 +106,22 @@ class UsageManager: ObservableObject {
 
     // MARK: Initialization
 
-    private init() {}
+    private init() {
+        // Load settings from UserDefaults
+        let defaults = UserDefaults.standard
+
+        // Default refresh interval: 60 seconds
+        if defaults.object(forKey: SettingsKey.refreshInterval) == nil {
+            defaults.set(60.0, forKey: SettingsKey.refreshInterval)
+        }
+        self.refreshInterval = defaults.double(forKey: SettingsKey.refreshInterval)
+
+        // Default refresh on open: true
+        if defaults.object(forKey: SettingsKey.refreshOnOpen) == nil {
+            defaults.set(true, forKey: SettingsKey.refreshOnOpen)
+        }
+        self.refreshOnOpen = defaults.bool(forKey: SettingsKey.refreshOnOpen)
+    }
 
     // MARK: - Public Methods
 

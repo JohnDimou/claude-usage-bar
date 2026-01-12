@@ -16,6 +16,7 @@ import SwiftUI
 struct UsagePopoverView: View {
     @ObservedObject var usageManager = UsageManager.shared
     @State private var showingInfo = false
+    @State private var showingSettings = false
     @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
@@ -59,6 +60,9 @@ struct UsagePopoverView: View {
         .frame(width: 380, height: 520)
         .sheet(isPresented: $showingInfo) {
             InfoDetailView()
+        }
+        .sheet(isPresented: $showingSettings) {
+            SettingsView()
         }
     }
 
@@ -127,27 +131,36 @@ struct UsagePopoverView: View {
     var headerView: some View {
         HStack(alignment: .center) {
             HStack(spacing: 12) {
-                // Animated icon
+                // Animated glowing icon
                 ZStack {
+                    // Outer glow
+                    Circle()
+                        .fill(
+                            RadialGradient(
+                                colors: [Color(hex: "8b5cf6").opacity(0.6), Color.clear],
+                                center: .center,
+                                startRadius: 5,
+                                endRadius: 35
+                            )
+                        )
+                        .frame(width: 60, height: 60)
+                        .blur(radius: 8)
+
+                    // Inner circle
                     Circle()
                         .fill(
                             LinearGradient(
-                                colors: [.purple.opacity(0.3), .blue.opacity(0.3)],
+                                colors: [Color(hex: "8b5cf6"), Color(hex: "6366f1")],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
                         )
-                        .frame(width: 44, height: 44)
+                        .frame(width: 46, height: 46)
+                        .shadow(color: Color(hex: "8b5cf6").opacity(0.5), radius: 8, x: 0, y: 4)
 
                     Image(systemName: "brain.head.profile")
-                        .font(.system(size: 22, weight: .semibold))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [.purple, .blue],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
+                        .font(.system(size: 24, weight: .bold))
+                        .foregroundColor(.white)
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -157,10 +170,13 @@ struct UsagePopoverView: View {
 
                     HStack(spacing: 4) {
                         Circle()
-                            .fill(Color.green)
-                            .frame(width: 6, height: 6)
+                            .fill(
+                                LinearGradient(colors: [Color(hex: "10b981"), Color(hex: "34d399")], startPoint: .top, endPoint: .bottom)
+                            )
+                            .frame(width: 8, height: 8)
+                            .shadow(color: Color(hex: "10b981").opacity(0.5), radius: 3)
                         Text("Claude Max")
-                            .font(.system(size: 11, weight: .medium))
+                            .font(.system(size: 11, weight: .semibold))
                             .foregroundColor(.secondary)
                     }
                 }
@@ -169,11 +185,26 @@ struct UsagePopoverView: View {
             Spacer()
 
             HStack(spacing: 8) {
+                // Settings button
+                Button(action: { showingSettings = true }) {
+                    Image(systemName: "gearshape.fill")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(
+                            LinearGradient(colors: [.gray, .secondary], startPoint: .top, endPoint: .bottom)
+                        )
+                }
+                .buttonStyle(.plain)
+                .padding(8)
+                .background(Color.primary.opacity(0.05))
+                .clipShape(Circle())
+
                 // Info button
                 Button(action: { showingInfo = true }) {
-                    Image(systemName: "info.circle")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(.secondary)
+                    Image(systemName: "info.circle.fill")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(
+                            LinearGradient(colors: [.blue, .cyan], startPoint: .top, endPoint: .bottom)
+                        )
                 }
                 .buttonStyle(.plain)
                 .padding(8)
@@ -638,6 +669,129 @@ struct InfoDetailView: View {
             }
         }
         .frame(width: 400, height: 550)
+    }
+}
+
+// MARK: - Settings View
+
+struct SettingsView: View {
+    @Environment(\.dismiss) var dismiss
+    @ObservedObject var usageManager = UsageManager.shared
+
+    let intervalOptions: [(String, Double)] = [
+        ("30 seconds", 30),
+        ("1 minute", 60),
+        ("2 minutes", 120),
+        ("5 minutes", 300),
+        ("10 minutes", 600),
+        ("Never", 0)
+    ]
+
+    var body: some View {
+        ZStack {
+            VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow)
+                .ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                // Header
+                HStack {
+                    Text("Settings")
+                        .font(.system(size: 18, weight: .bold))
+
+                    Spacer()
+
+                    Button(action: { dismiss() }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 22))
+                            .foregroundColor(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(20)
+
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 20) {
+                        // Auto Refresh Section
+                        InfoSection(title: "Auto Refresh", icon: "clock.arrow.circlepath") {
+                            VStack(alignment: .leading, spacing: 16) {
+                                Text("Refresh Interval")
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundColor(.secondary)
+
+                                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                                    ForEach(intervalOptions, id: \.1) { option in
+                                        IntervalButton(
+                                            title: option.0,
+                                            isSelected: usageManager.refreshInterval == option.1,
+                                            action: { usageManager.refreshInterval = option.1 }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        // On Open Section
+                        InfoSection(title: "Behavior", icon: "cursorarrow.click.2") {
+                            Toggle(isOn: $usageManager.refreshOnOpen) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Refresh on Open")
+                                        .font(.system(size: 13, weight: .medium))
+                                    Text("Fetch new data when popup opens")
+                                        .font(.system(size: 11))
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+                            .toggleStyle(SwitchToggleStyle(tint: Color(hex: "8b5cf6")))
+                        }
+
+                        // Current Status
+                        InfoSection(title: "Status", icon: "info.circle") {
+                            VStack(alignment: .leading, spacing: 8) {
+                                InfoDetailRow(
+                                    label: "Current Interval",
+                                    value: intervalOptions.first { $0.1 == usageManager.refreshInterval }?.0 ?? "Unknown"
+                                )
+                                InfoDetailRow(
+                                    label: "Refresh on Open",
+                                    value: usageManager.refreshOnOpen ? "Enabled" : "Disabled"
+                                )
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 20)
+                }
+            }
+        }
+        .frame(width: 360, height: 420)
+    }
+}
+
+struct IntervalButton: View {
+    let title: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(isSelected ? .white : .primary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(isSelected
+                            ? LinearGradient(colors: [Color(hex: "8b5cf6"), Color(hex: "6366f1")], startPoint: .leading, endPoint: .trailing)
+                            : LinearGradient(colors: [Color.primary.opacity(0.05), Color.primary.opacity(0.05)], startPoint: .leading, endPoint: .trailing)
+                        )
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(isSelected ? Color.clear : Color.primary.opacity(0.1), lineWidth: 1)
+                )
+        }
+        .buttonStyle(.plain)
     }
 }
 

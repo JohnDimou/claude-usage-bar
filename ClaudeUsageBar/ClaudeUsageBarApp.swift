@@ -50,9 +50,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     /// Timer for auto-refreshing usage data
     var timer: Timer?
 
-    /// Refresh interval in seconds (default: 60 seconds)
-    let refreshInterval: TimeInterval = 60.0
-
     // MARK: - App Lifecycle
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -71,6 +68,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             self,
             selector: #selector(usageDidUpdate),
             name: .usageDidUpdate,
+            object: nil
+        )
+
+        // Observe refresh interval changes
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(refreshIntervalChanged),
+            name: .refreshIntervalChanged,
             object: nil
         )
     }
@@ -99,8 +104,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// Sets up the auto-refresh timer
     private func setupAutoRefresh() {
-        timer = Timer.scheduledTimer(withTimeInterval: refreshInterval, repeats: true) { [weak self] _ in
-            self?.usageManager.fetchUsage()
+        timer?.invalidate()
+        let interval = usageManager.refreshInterval
+        if interval > 0 {
+            timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
+                self?.usageManager.fetchUsage()
+            }
         }
     }
 
@@ -110,6 +119,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     @objc func usageDidUpdate() {
         DispatchQueue.main.async {
             self.updateStatusButton()
+        }
+    }
+
+    /// Called when refresh interval setting changes
+    @objc func refreshIntervalChanged() {
+        DispatchQueue.main.async {
+            self.setupAutoRefresh()
         }
     }
 
@@ -151,8 +167,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             if popover.isShown {
                 popover.performClose(nil)
             } else {
-                // Refresh data when opening
-                usageManager.fetchUsage()
+                // Refresh data when opening (if enabled)
+                if usageManager.refreshOnOpen {
+                    usageManager.fetchUsage()
+                }
                 popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
                 popover.contentViewController?.view.window?.makeKey()
             }
@@ -165,4 +183,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 extension Notification.Name {
     /// Posted when usage data has been updated
     static let usageDidUpdate = Notification.Name("usageDidUpdate")
+
+    /// Posted when refresh interval setting changes
+    static let refreshIntervalChanged = Notification.Name("refreshIntervalChanged")
 }
