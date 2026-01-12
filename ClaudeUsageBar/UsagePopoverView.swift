@@ -24,46 +24,48 @@ struct UsagePopoverView: View {
             // Background
             backgroundGradient
 
-            // Content
-            VStack(spacing: 0) {
-                headerView
-                    .padding(.horizontal, 20)
-                    .padding(.top, 20)
-
-                if usageManager.isLoading && usageManager.currentUsage == nil {
-                    loadingView
-                } else if let error = usageManager.errorMessage {
-                    errorView(error)
-                } else if let usage = usageManager.currentUsage {
-                    ScrollView(showsIndicators: false) {
-                        VStack(spacing: 14) {
-                            sessionCard(usage)
-                            weeklyCard(usage)
-                            if usage.sonnetPercentage > 0 {
-                                sonnetCard(usage)
-                            }
-                            executionInfoCard(usage)
-                        }
+            if showingSettings {
+                // Settings View (replaces main content)
+                SettingsView(showingSettings: $showingSettings)
+            } else if showingInfo {
+                // Info View (replaces main content)
+                InfoDetailView(showingInfo: $showingInfo)
+            } else {
+                // Main Content
+                VStack(spacing: 0) {
+                    headerView
                         .padding(.horizontal, 20)
-                        .padding(.top, 16)
-                        .padding(.bottom, 8)
-                    }
-                } else {
-                    emptyStateView
-                }
+                        .padding(.top, 20)
 
-                footerView
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 16)
+                    if usageManager.isLoading && usageManager.currentUsage == nil {
+                        loadingView
+                    } else if let error = usageManager.errorMessage {
+                        errorView(error)
+                    } else if let usage = usageManager.currentUsage {
+                        ScrollView(showsIndicators: false) {
+                            VStack(spacing: 14) {
+                                sessionCard(usage)
+                                weeklyCard(usage)
+                                if usage.sonnetPercentage > 0 {
+                                    sonnetCard(usage)
+                                }
+                                executionInfoCard(usage)
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.top, 16)
+                            .padding(.bottom, 8)
+                        }
+                    } else {
+                        emptyStateView
+                    }
+
+                    footerView
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 16)
+                }
             }
         }
         .frame(width: 380, height: 520)
-        .sheet(isPresented: $showingInfo) {
-            InfoDetailView()
-        }
-        .sheet(isPresented: $showingSettings) {
-            SettingsView()
-        }
     }
 
     // MARK: - Background
@@ -552,110 +554,119 @@ struct EnhancedUsageCard: View {
 // MARK: - Info Detail View
 
 struct InfoDetailView: View {
-    @Environment(\.dismiss) var dismiss
-    @Environment(\.colorScheme) var colorScheme
+    @Binding var showingInfo: Bool
 
     var body: some View {
-        ZStack {
-            // Background
-            VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow)
-                .ignoresSafeArea()
+        VStack(spacing: 0) {
+            // Header
+            HStack {
+                HStack(spacing: 10) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.primary.opacity(0.08))
+                            .frame(width: 38, height: 38)
 
-            VStack(spacing: 0) {
-                // Header
-                HStack {
-                    Text("About Claude Code Usage Bar")
-                        .font(.system(size: 18, weight: .bold))
-
-                    Spacer()
-
-                    Button(action: { dismiss() }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 22))
-                            .foregroundColor(.secondary)
+                        Image(systemName: "info.circle.fill")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(.primary.opacity(0.7))
                     }
-                    .buttonStyle(.plain)
-                }
-                .padding(20)
 
-                ScrollView(showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 20) {
-                        // App Info
-                        InfoSection(title: "Application", icon: "app.badge") {
-                            VStack(alignment: .leading, spacing: 8) {
+                    Text("About")
+                        .font(.system(size: 15, weight: .bold))
+                }
+
+                Spacer()
+
+                Button(action: { showingInfo = false }) {
+                    Image(systemName: "chevron.left.circle.fill")
+                        .font(.system(size: 22))
+                        .foregroundColor(.secondary)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 20)
+            .padding(.bottom, 16)
+
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 14) {
+                    // App Info
+                    SettingsCard {
+                        VStack(alignment: .leading, spacing: 12) {
+                            SettingsHeader(title: "Application", icon: "app.badge")
+                            VStack(alignment: .leading, spacing: 6) {
                                 InfoDetailRow(label: "Version", value: "1.0.0")
                                 InfoDetailRow(label: "Platform", value: "macOS 13.0+")
                                 InfoDetailRow(label: "Framework", value: "SwiftUI")
                                 InfoDetailRow(label: "License", value: "MIT")
                             }
                         }
+                    }
 
-                        // How It Works
-                        InfoSection(title: "How It Works", icon: "gearshape.2") {
-                            VStack(alignment: .leading, spacing: 10) {
+                    // How It Works
+                    SettingsCard {
+                        VStack(alignment: .leading, spacing: 12) {
+                            SettingsHeader(title: "How It Works", icon: "gearshape.2")
+                            VStack(alignment: .leading, spacing: 8) {
                                 StepRow(number: 1, text: "Spawns Claude CLI in a pseudo-terminal")
                                 StepRow(number: 2, text: "Sends /usage command interactively")
                                 StepRow(number: 3, text: "Parses terminal output for usage data")
                                 StepRow(number: 4, text: "Displays results in native SwiftUI")
                             }
                         }
+                    }
 
-                        // Requirements
-                        InfoSection(title: "Requirements", icon: "checklist") {
-                            VStack(alignment: .leading, spacing: 8) {
-                                RequirementRow(name: "Claude Code CLI", status: true)
-                                RequirementRow(name: "Python 3.6+", status: true)
-                                RequirementRow(name: "macOS 13+", status: true)
-                                RequirementRow(name: "Claude Pro/Max", status: true)
-                            }
-                        }
-
-                        // Data Info
-                        InfoSection(title: "Data & Privacy", icon: "lock.shield") {
-                            Text("This app runs locally and only communicates with the Claude CLI on your machine. No data is sent to external servers. Usage statistics are fetched directly from your Claude account via the CLI.")
+                    // Data Info
+                    SettingsCard {
+                        VStack(alignment: .leading, spacing: 12) {
+                            SettingsHeader(title: "Privacy", icon: "lock.shield")
+                            Text("This app runs locally. No data is sent to external servers. Usage stats are fetched via the Claude CLI.")
                                 .font(.system(size: 12))
                                 .foregroundColor(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
+                    }
 
-                        // Links
-                        InfoSection(title: "Links", icon: "link") {
+                    // Links
+                    SettingsCard {
+                        VStack(alignment: .leading, spacing: 12) {
+                            SettingsHeader(title: "Links", icon: "link")
                             VStack(alignment: .leading, spacing: 8) {
                                 LinkRow(title: "GitHub Repository", url: "https://github.com/JohnDimou/ClaudeCodeUsageBar", icon: "star.fill")
                                 LinkRow(title: "Report Issue", url: "https://github.com/JohnDimou/ClaudeCodeUsageBar/issues", icon: "exclamationmark.bubble")
                                 LinkRow(title: "OptimalVersion.io", url: "https://optimalversion.io", icon: "globe")
                             }
                         }
-
-                        // Credits
-                        HStack {
-                            Spacer()
-                            VStack(spacing: 4) {
-                                Text("John Dimou")
-                                    .font(.system(size: 11, weight: .semibold))
-                                    .foregroundColor(.primary)
-                                Text("OptimalVersion.io")
-                                    .font(.system(size: 10))
-                                    .foregroundColor(.secondary)
-                            }
-                            Spacer()
-                        }
-                        .padding(.top, 10)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 20)
+
+                    // Credits
+                    HStack {
+                        Spacer()
+                        VStack(spacing: 4) {
+                            Text("John Dimou")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundColor(.primary)
+                            Text("OptimalVersion.io")
+                                .font(.system(size: 10))
+                                .foregroundColor(.secondary)
+                        }
+                        Spacer()
+                    }
+                    .padding(.top, 6)
                 }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 20)
             }
+
+            Spacer()
         }
-        .frame(width: 400, height: 550)
     }
 }
 
 // MARK: - Settings View
 
 struct SettingsView: View {
-    @Environment(\.dismiss) var dismiss
-    @Environment(\.colorScheme) var colorScheme
+    @Binding var showingSettings: Bool
     @ObservedObject var usageManager = UsageManager.shared
 
     let intervalOptions: [(String, Double)] = [
@@ -668,144 +679,105 @@ struct SettingsView: View {
     ]
 
     var body: some View {
-        ZStack {
-            // Dark background matching main view
-            settingsBackground
+        VStack(spacing: 0) {
+            // Header
+            HStack {
+                HStack(spacing: 10) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.primary.opacity(0.08))
+                            .frame(width: 38, height: 38)
 
-            VStack(spacing: 0) {
-                // Header
-                HStack {
-                    HStack(spacing: 10) {
-                        ZStack {
-                            Circle()
-                                .fill(Color.primary.opacity(0.08))
-                                .frame(width: 36, height: 36)
+                        Image(systemName: "gearshape.fill")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(.primary.opacity(0.7))
+                    }
 
-                            Image(systemName: "gearshape.fill")
-                                .font(.system(size: 16, weight: .semibold))
-                                .foregroundColor(.primary.opacity(0.7))
+                    Text("Settings")
+                        .font(.system(size: 15, weight: .bold))
+                }
+
+                Spacer()
+
+                Button(action: { showingSettings = false }) {
+                    Image(systemName: "chevron.left.circle.fill")
+                        .font(.system(size: 22))
+                        .foregroundColor(.secondary)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 20)
+            .padding(.bottom, 16)
+
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 14) {
+                    // Startup Section
+                    SettingsCard {
+                        VStack(alignment: .leading, spacing: 14) {
+                            SettingsHeader(title: "Startup", icon: "power")
+
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Launch at Login")
+                                        .font(.system(size: 13, weight: .medium))
+                                        .foregroundColor(.primary)
+                                    Text("Start app when you log in")
+                                        .font(.system(size: 11))
+                                        .foregroundColor(.secondary)
+                                }
+                                Spacer()
+                                Toggle("", isOn: $usageManager.launchAtLogin)
+                                    .toggleStyle(SwitchToggleStyle(tint: Color(hex: "8b5cf6")))
+                                    .labelsHidden()
+                            }
                         }
-
-                        Text("Settings")
-                            .font(.system(size: 17, weight: .bold))
                     }
 
-                    Spacer()
+                    // Auto Refresh Section
+                    SettingsCard {
+                        VStack(alignment: .leading, spacing: 14) {
+                            SettingsHeader(title: "Auto Refresh", icon: "clock.arrow.circlepath")
 
-                    Button(action: { dismiss() }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 22))
-                            .foregroundColor(.secondary)
+                            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                                ForEach(intervalOptions, id: \.1) { option in
+                                    IntervalButton(
+                                        title: option.0,
+                                        isSelected: usageManager.refreshInterval == option.1,
+                                        action: { usageManager.refreshInterval = option.1 }
+                                    )
+                                }
+                            }
+                        }
                     }
-                    .buttonStyle(.plain)
+
+                    // Behavior Section
+                    SettingsCard {
+                        VStack(alignment: .leading, spacing: 14) {
+                            SettingsHeader(title: "Behavior", icon: "cursorarrow.click.2")
+
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Refresh on Open")
+                                        .font(.system(size: 13, weight: .medium))
+                                        .foregroundColor(.primary)
+                                    Text("Fetch new data when popup opens")
+                                        .font(.system(size: 11))
+                                        .foregroundColor(.secondary)
+                                }
+                                Spacer()
+                                Toggle("", isOn: $usageManager.refreshOnOpen)
+                                    .toggleStyle(SwitchToggleStyle(tint: Color(hex: "8b5cf6")))
+                                    .labelsHidden()
+                            }
+                        }
+                    }
                 }
                 .padding(.horizontal, 20)
-                .padding(.top, 20)
-                .padding(.bottom, 16)
-
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 16) {
-                        // Startup Section
-                        SettingsCard {
-                            VStack(alignment: .leading, spacing: 14) {
-                                SettingsHeader(title: "Startup", icon: "power")
-
-                                Toggle(isOn: $usageManager.launchAtLogin) {
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text("Launch at Login")
-                                            .font(.system(size: 13, weight: .medium))
-                                            .foregroundColor(.primary)
-                                        Text("Start app when you log in")
-                                            .font(.system(size: 11))
-                                            .foregroundColor(.secondary)
-                                    }
-                                }
-                                .toggleStyle(SwitchToggleStyle(tint: Color(hex: "8b5cf6")))
-                            }
-                        }
-
-                        // Auto Refresh Section
-                        SettingsCard {
-                            VStack(alignment: .leading, spacing: 14) {
-                                SettingsHeader(title: "Auto Refresh", icon: "clock.arrow.circlepath")
-
-                                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
-                                    ForEach(intervalOptions, id: \.1) { option in
-                                        IntervalButton(
-                                            title: option.0,
-                                            isSelected: usageManager.refreshInterval == option.1,
-                                            action: { usageManager.refreshInterval = option.1 }
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-                        // Behavior Section
-                        SettingsCard {
-                            VStack(alignment: .leading, spacing: 14) {
-                                SettingsHeader(title: "Behavior", icon: "cursorarrow.click.2")
-
-                                Toggle(isOn: $usageManager.refreshOnOpen) {
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text("Refresh on Open")
-                                            .font(.system(size: 13, weight: .medium))
-                                            .foregroundColor(.primary)
-                                        Text("Fetch new data when popup opens")
-                                            .font(.system(size: 11))
-                                            .foregroundColor(.secondary)
-                                    }
-                                }
-                                .toggleStyle(SwitchToggleStyle(tint: Color(hex: "8b5cf6")))
-                            }
-                        }
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 20)
-                }
+                .padding(.bottom, 20)
             }
-        }
-        .frame(width: 340, height: 400)
-    }
 
-    var settingsBackground: some View {
-        ZStack {
-            (colorScheme == .dark ? Color(hex: "1a1a2e") : Color(hex: "f0f0f5"))
-                .opacity(0.95)
-
-            VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow)
-                .opacity(0.2)
-
-            // Subtle gradient orbs
-            GeometryReader { geometry in
-                ZStack {
-                    Circle()
-                        .fill(
-                            RadialGradient(
-                                colors: [Color.purple.opacity(0.1), Color.clear],
-                                center: .center,
-                                startRadius: 0,
-                                endRadius: 100
-                            )
-                        )
-                        .frame(width: 200, height: 200)
-                        .offset(x: -50, y: -30)
-                        .blur(radius: 40)
-
-                    Circle()
-                        .fill(
-                            RadialGradient(
-                                colors: [Color.blue.opacity(0.08), Color.clear],
-                                center: .center,
-                                startRadius: 0,
-                                endRadius: 100
-                            )
-                        )
-                        .frame(width: 180, height: 180)
-                        .offset(x: 80, y: 150)
-                        .blur(radius: 35)
-                }
-            }
+            Spacer()
         }
     }
 }
