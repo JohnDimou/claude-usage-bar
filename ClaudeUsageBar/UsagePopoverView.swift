@@ -146,7 +146,7 @@ struct UsagePopoverView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Claude Usage")
+                    Text("Claude Code Usage")
                         .font(.system(size: 18, weight: .bold))
                         .foregroundColor(.primary)
 
@@ -177,16 +177,7 @@ struct UsagePopoverView: View {
 
                 // Refresh button
                 Button(action: { usageManager.fetchUsage() }) {
-                    Image(systemName: "arrow.clockwise")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.secondary)
-                        .rotationEffect(.degrees(usageManager.isLoading ? 360 : 0))
-                        .animation(
-                            usageManager.isLoading
-                                ? .linear(duration: 1).repeatForever(autoreverses: false)
-                                : .default,
-                            value: usageManager.isLoading
-                        )
+                    RefreshIcon(isLoading: usageManager.isLoading)
                 }
                 .buttonStyle(.plain)
                 .padding(8)
@@ -542,7 +533,7 @@ struct InfoDetailView: View {
             VStack(spacing: 0) {
                 // Header
                 HStack {
-                    Text("About Claude Usage Bar")
+                    Text("About Claude Code Usage Bar")
                         .font(.system(size: 18, weight: .bold))
 
                     Spacer()
@@ -803,6 +794,38 @@ struct LinkRow: View {
             }
         }
         .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Refresh Icon
+
+struct RefreshIcon: View {
+    let isLoading: Bool
+    @State private var rotation: Double = 0
+
+    var body: some View {
+        Image(systemName: "arrow.clockwise")
+            .font(.system(size: 14, weight: .medium))
+            .foregroundColor(.secondary)
+            .rotationEffect(.degrees(rotation))
+            .onChange(of: isLoading) { newValue in
+                if newValue {
+                    withAnimation(.linear(duration: 1).repeatForever(autoreverses: false)) {
+                        rotation = 360
+                    }
+                } else {
+                    withAnimation(.default) {
+                        rotation = 0
+                    }
+                }
+            }
+            .onAppear {
+                if isLoading {
+                    withAnimation(.linear(duration: 1).repeatForever(autoreverses: false)) {
+                        rotation = 360
+                    }
+                }
+            }
     }
 }
 
