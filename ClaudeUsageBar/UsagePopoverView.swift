@@ -66,7 +66,12 @@ struct UsagePopoverView: View {
 
     var backgroundGradient: some View {
         ZStack {
+            // Solid base color (85% opaque)
+            (colorScheme == .dark ? Color(hex: "1a1a2e") : Color(hex: "f0f0f5"))
+                .opacity(0.85)
+
             VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow)
+                .opacity(0.3)
 
             // Animated gradient orbs
             GeometryReader { geometry in
@@ -75,7 +80,7 @@ struct UsagePopoverView: View {
                     Circle()
                         .fill(
                             RadialGradient(
-                                colors: [Color.purple.opacity(0.3), Color.clear],
+                                colors: [Color.purple.opacity(0.4), Color.clear],
                                 center: .center,
                                 startRadius: 0,
                                 endRadius: 150
@@ -89,7 +94,7 @@ struct UsagePopoverView: View {
                     Circle()
                         .fill(
                             RadialGradient(
-                                colors: [Color.blue.opacity(0.25), Color.clear],
+                                colors: [Color.blue.opacity(0.35), Color.clear],
                                 center: .center,
                                 startRadius: 0,
                                 endRadius: 150
@@ -103,7 +108,7 @@ struct UsagePopoverView: View {
                     Circle()
                         .fill(
                             RadialGradient(
-                                colors: [Color.cyan.opacity(0.2), Color.clear],
+                                colors: [Color.cyan.opacity(0.3), Color.clear],
                                 center: .center,
                                 startRadius: 0,
                                 endRadius: 100
