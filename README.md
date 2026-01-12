@@ -67,8 +67,8 @@ claude --version
 
 1. Clone this repository:
    ```bash
-   git clone https://github.com/JohnDimou/claude-usage-bar.git
-   cd claude-usage-bar
+   git clone https://github.com/JohnDimou/ClaudeCodeUsageBar.git
+   cd ClaudeCodeUsageBar
    ```
 
 2. Open in Xcode:
@@ -136,7 +136,7 @@ The app uses a Python script to interact with the Claude Code CLI:
 ## Project Structure
 
 ```
-claude-usage-bar/
+ClaudeCodeUsageBar/
 ├── ClaudeUsageBar/
 │   ├── ClaudeUsageBarApp.swift    # App entry point & menu bar setup
 │   ├── UsageManager.swift          # Usage data fetching, parsing & settings

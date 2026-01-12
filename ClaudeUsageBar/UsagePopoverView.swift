@@ -400,12 +400,12 @@ struct UsagePopoverView: View {
         VStack(spacing: 10) {
             // Star on GitHub button
             Button(action: {
-                if let url = URL(string: "https://github.com/JohnDimou/claude-usage-bar") {
+                if let url = URL(string: "https://github.com/JohnDimou/ClaudeCodeUsageBar") {
                     NSWorkspace.shared.open(url)
                 }
             }) {
                 HStack(spacing: 6) {
-                    Text("Star on GitHub")
+                    Text("⭐ Star on GitHub")
                         .font(.system(size: 11, weight: .medium))
                 }
                 .foregroundColor(.secondary)
@@ -415,6 +415,7 @@ struct UsagePopoverView: View {
             .padding(.vertical, 6)
             .background(Color.primary.opacity(0.05))
             .clipShape(Capsule())
+            .padding(.top, 8)
 
             HStack {
                 if let usage = usageManager.currentUsage {
@@ -620,8 +621,8 @@ struct InfoDetailView: View {
                         // Links
                         InfoSection(title: "Links", icon: "link") {
                             VStack(alignment: .leading, spacing: 8) {
-                                LinkRow(title: "GitHub Repository", url: "https://github.com/JohnDimou/claude-usage-bar", icon: "star.fill")
-                                LinkRow(title: "Report Issue", url: "https://github.com/JohnDimou/claude-usage-bar/issues", icon: "exclamationmark.bubble")
+                                LinkRow(title: "GitHub Repository", url: "https://github.com/JohnDimou/ClaudeCodeUsageBar", icon: "star.fill")
+                                LinkRow(title: "Report Issue", url: "https://github.com/JohnDimou/ClaudeCodeUsageBar/issues", icon: "exclamationmark.bubble")
                                 LinkRow(title: "OptimalVersion.io", url: "https://optimalversion.io", icon: "globe")
                             }
                         }
